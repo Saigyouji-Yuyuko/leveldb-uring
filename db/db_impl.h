@@ -5,16 +5,17 @@
 #ifndef STORAGE_LEVELDB_DB_DB_IMPL_H_
 #define STORAGE_LEVELDB_DB_DB_IMPL_H_
 
+#include "db/dbformat.h"
+#include "db/log_writer.h"
+#include "db/snapshot.h"
 #include <atomic>
 #include <deque>
 #include <set>
 #include <string>
 
-#include "db/dbformat.h"
-#include "db/log_writer.h"
-#include "db/snapshot.h"
 #include "leveldb/db.h"
 #include "leveldb/env.h"
+
 #include "port/port.h"
 #include "port/thread_annotations.h"
 
@@ -25,8 +26,11 @@ class TableCache;
 class Version;
 class VersionEdit;
 class VersionSet;
+class CompactionTask;
 
-class DBImpl : public DB {
+class DBImpl final : public DB, public std::enable_shared_from_this<DBImpl> {
+  friend class CompactionTask;
+
  public:
   DBImpl(const Options& options, const std::string& dbname);
 
@@ -48,6 +52,17 @@ class DBImpl : public DB {
   bool GetProperty(const Slice& property, std::string* value) override;
   void GetApproximateSizes(const Range* range, int n, uint64_t* sizes) override;
   void CompactRange(const Slice* begin, const Slice* end) override;
+
+  void PutAsync(const WriteOptions& options, const Slice& key,
+                const Slice& value,
+                const std::function<void(Status)>& callback) override;
+  void DeleteAsync(const WriteOptions& options, const Slice& key,
+                   const std::function<void(Status)>& callback) override;
+  void WriteAsync(const WriteOptions& options, WriteBatch* updates,
+                  const std::function<void(Status)>& callback) override;
+  void GetAsync(const ReadOptions& options, const Slice& key,
+                std::string* value,
+                const std::function<void(Status)>& callback) override;
 
   // Extra methods (for testing) that are not in the public DB interface
 
@@ -139,6 +154,7 @@ class DBImpl : public DB {
 
   void MaybeScheduleCompaction() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   static void BGWork(void* db);
+  void CompactionOrFlushAsync() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void BackgroundCall();
   void BackgroundCompaction() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void CleanupCompaction(CompactionState* compact)
@@ -203,6 +219,10 @@ class DBImpl : public DB {
   Status bg_error_ GUARDED_BY(mutex_);
 
   CompactionStats stats_[config::kNumLevels] GUARDED_BY(mutex_);
+
+  // for async operations
+  std::shared_ptr<Status> bg_error_async_;
+  std::atomic<uint64_t> compaction_counter_{0};
 };
 
 // Sanitize db options.  The caller should delete result.info_log if

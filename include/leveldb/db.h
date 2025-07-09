@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 
 #include "leveldb/export.h"
 #include "leveldb/iterator.h"
@@ -65,17 +66,24 @@ class LEVELDB_EXPORT DB {
   // Note: consider setting options.sync = true.
   virtual Status Put(const WriteOptions& options, const Slice& key,
                      const Slice& value) = 0;
+  virtual void PutAsync(const WriteOptions& options, const Slice& key,
+                        const Slice& value,
+                        const std::function<void(Status)>& callback) = 0;
 
   // Remove the database entry (if any) for "key".  Returns OK on
   // success, and a non-OK status on error.  It is not an error if "key"
   // did not exist in the database.
   // Note: consider setting options.sync = true.
   virtual Status Delete(const WriteOptions& options, const Slice& key) = 0;
+  virtual void DeleteAsync(const WriteOptions& options, const Slice& key,
+                           const std::function<void(Status)>& callback) = 0;
 
   // Apply the specified updates to the database.
   // Returns OK on success, non-OK on failure.
   // Note: consider setting options.sync = true.
   virtual Status Write(const WriteOptions& options, WriteBatch* updates) = 0;
+  virtual void WriteAsync(const WriteOptions& options, WriteBatch* updates,
+                          const std::function<void(Status)>& callback) = 0;
 
   // If the database contains an entry for "key" store the
   // corresponding value in *value and return OK.
@@ -86,6 +94,9 @@ class LEVELDB_EXPORT DB {
   // May return some other Status on an error.
   virtual Status Get(const ReadOptions& options, const Slice& key,
                      std::string* value) = 0;
+  virtual void GetAsync(const ReadOptions& options, const Slice& key,
+                        std::string* value,
+                        const std::function<void(Status)>& callback) = 0;
 
   // Return a heap-allocated iterator over the contents of the database.
   // The result of NewIterator() is initially invalid (caller must
