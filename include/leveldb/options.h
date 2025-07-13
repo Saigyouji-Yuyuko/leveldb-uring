@@ -7,8 +7,8 @@
 
 #include <cstddef>
 
+#include "leveldb/async/async_io.h"
 #include "leveldb/export.h"
-#include "leveldb/io/async_io.h"
 
 namespace leveldb {
 
@@ -147,9 +147,7 @@ struct LEVELDB_EXPORT Options {
   // NewBloomFilterPolicy() here.
   const FilterPolicy* filter_policy = nullptr;
 
-  bool async_io = false;
-
-  io::AsyncExecutor* async_executor = nullptr;
+  io::AsyncOption async_option;
 };
 
 // Options that control read operations

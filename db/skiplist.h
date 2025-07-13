@@ -32,6 +32,7 @@
 #include <cstdlib>
 
 #include "util/arena.h"
+#include "util/concurrent_arena.h"
 #include "util/random.h"
 
 namespace leveldb {
@@ -45,7 +46,7 @@ class SkipList {
   // Create a new SkipList object that will use "cmp" for comparing keys,
   // and will allocate memory using "*arena".  Objects allocated in the arena
   // must remain allocated for the lifetime of the skiplist object.
-  explicit SkipList(Comparator cmp, Arena* arena);
+  explicit SkipList(Comparator cmp, ConcurrentArena* arena);
 
   SkipList(const SkipList&) = delete;
   SkipList& operator=(const SkipList&) = delete;
@@ -127,7 +128,7 @@ class SkipList {
 
   // Immutable after construction
   Comparator const compare_;
-  Arena* const arena_;  // Arena used for allocations of nodes
+  ConcurrentArena* const arena_;  // Arena used for allocations of nodes
 
   Node* const head_;
 

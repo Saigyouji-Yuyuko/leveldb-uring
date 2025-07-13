@@ -1,7 +1,6 @@
 #include <memory>
 
-#include "leveldb/io/async_io.h"
-
+#include "async/async_env.hpp"
 #include "db_impl.h"
 
 namespace leveldb {
@@ -138,8 +137,6 @@ void CompactionTask::Begin() {
     Flush();
     return;
   }
-
-  
 }
 
 }  // namespace leveldb

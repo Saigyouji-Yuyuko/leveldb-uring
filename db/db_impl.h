@@ -19,6 +19,8 @@
 #include "port/port.h"
 #include "port/thread_annotations.h"
 
+#include "async/async_write.hpp"
+
 namespace leveldb {
 
 class MemTable;
@@ -90,6 +92,8 @@ class DBImpl final : public DB, public std::enable_shared_from_this<DBImpl> {
   friend class DB;
   struct CompactionState;
   struct Writer;
+  friend class io::AsyncWrite;
+  friend class io::WriteTask;
 
   // Information for a manual compaction
   struct ManualCompaction {
